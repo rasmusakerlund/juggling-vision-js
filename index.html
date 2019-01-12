@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html>
+ <head>
+  <title>Webcam JugglingDemo</title>
+  <style>
+    body {
+      font-family: georgia;
+      background-color: #4e2a00;
+      font-size: 175%;
+      margin: 20px auto;
+      width: 1024px;
+    }
+    #preview, #availablePatterns {
+      height: 512px;
+      display: inline-block;
+      float: left;
+    }
+
+    #preview {
+      width: 512px;
+    }
+    #preview canvas {
+      width: 512px;
+      height: 512px;
+    }
+
+    #preview.fullscreen {
+      position: fixed;
+      left:0;
+      right:0;
+      bottom:0;
+      top:0;
+      width: 100vw;
+      height: 100vh;
+      background: black;
+    }
+    #preview.fullscreen canvas {
+      position: fixed;
+      left: 0;
+      right: 0;
+      margin: 0 auto;
+      width: 100vh;
+      height: 100vh;
+    }
+    #instructions {
+      margin: 20px;
+    }
+    #availablePatterns ul {
+      margin-top: 0px;
+      list-style-type: none;
+    }
+    #backpanel {
+      background-color: #ffedd7;
+      padding: 10px;
+      box-shadow: 10px 10px black;
+    }
+    #loadingmessage {
+      font-weight: bold;
+      color: orange;
+    }
+    #finishedloading {
+      color: green;
+      display: none;
+    }
+    #clearfix {
+      clear: both;
+    }
+  </style>
+  <meta charset="utf-8"/>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@0.14.1"> </script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/dat-gui/0.7.3/dat.gui.js"></script>
+  <script src="jvision.js"></script>
+  <script type="application/javascript">
+
+
+    function start() {
+      var settings  = {
+        showWebcam : true,
+        nBalls : 3
+      };
+
+      var gui = new dat.GUI();
+      gui.add(settings, "showWebcam")
+      gui.add(settings, "nBalls", {zero: 0, one: 1, two: 2, three: 3, four: 4, five: 5});
+
+      var previewDiv = document.getElementById('preview');
+      previewWidth = 256
+      nBalls = 5
+      var localizer = new jvision.Localizer(previewDiv, previewWidth, nBalls);
+
+      localizer.registerListener(function(previewCtx) {
+        if (settings.showWebcam == false) {
+          previewCtx.fillStyle = "black"
+          previewCtx.fillRect(0,0, previewWidth, previewWidth)
+        }
+      })
+
+      localizer.registerListener(function(previewCtx, coordinates) {
+        jvision.drawBallsAndHands(previewCtx, coordinates, settings.nBalls)
+      })
+
+      var patternCategorizer = new jvision.PatternCategorizer('./models/3b_pattern_model_js/model.json', 30, 3)
+      patternCategorizer.init()
+
+      var frameNumber = 0
+      date = new Date()
+      oldTime = date.getTime()
+      slow = false
+      first60 = 0
+      localizer.registerListener(function(previewCtx, coordinates) {
+        if (settings.nBalls == 3) {
+          previewCtx.fillStyle = "black"
+          previewCtx.fillRect(0, 0, previewWidth, 25)
+          coordinates = coordinates.slice(0,10)
+          pattern = patternCategorizer.predict(coordinates)
+          previewCtx.fillStyle = "white"
+          previewCtx.font = "18px Arial"
+          patternNames = ["441", "box", "cascade", "42, left hand", "shower, left hand", "mill's mess", "one up two up", "42, right hand", "reverse cascade", "shower, right hand", "takeouts", "tennis", ""]
+          text = patternNames[patternIndex]
+          frameNumber += 1
+          if (frameNumber >= 30) {
+            frameNumber = 0
+            date = new Date()
+            newTime = date.getTime()
+            if (newTime - oldTime > 1100) {
+              slow = true
+            } else {
+              slow = false
+            }
+            oldTime = newTime
+          }
+          if (slow) {
+            if (first60 < 60) {
+              first60 += 1
+            } else {
+              text = "low fps: no pattern detection"
+            }
+          }
+          previewCtx.fillText(text, 5, 20)
+        }
+      })
+      localizer.run(function() {
+        var loadingmessage = document.getElementById('loadingmessage');
+        loadingmessage.style.display = 'none'
+        var finishedloading = document.getElementById('finishedloading');
+        finishedloading.style.display = 'inline'
+      });
+      $("#preview").dblclick(function() {
+        $("#preview").toggleClass("fullscreen")
+      })
+    }
+    window.onload = start
+
+  </script>
+ </head>
+ <body>
+   <div id="backpanel">
+     <div id="instructions">
+       <h3>Webcam JugglingDemo</h3>
+       <p>The demo locates your hands and zero to five balls in live webcam video as you juggle.
+         It should work on the desktop versions of Firefox, Chrome, and Opera on reasonable hardware.
+         If you choose three balls and have stronger hardware, it will try to guess which pattern you are juggling.
+         </p>
+       <ul>
+         <li>Choose the number of balls to detect in the settings to the right.</li>
+         <li>Double-click on the preview area to fill the window.</li>
+       </ul>
+       <p>
+         <span id="loadingmessage">Loading models (8 mb), please wait...</span>
+         <span id="finishedloading">Successfully loaded models! If you allowed webcam access, the demo should now be running.</span>
+       </p>
+     </div>
+     <div id="preview"></div>
+     <div id="availablePatterns">
+       <ul>
+         <li><strong>Available patterns</strong></li>
+         <li>441</li>
+         <li>box</li>
+         <li>cascade</li>
+         <li>42, left hand</li>
+         <li>shower, left hand</li>
+         <li>mill's mess</li>
+         <li>one up two up</li>
+         <li>42, right hand</li>
+         <li>reverse cascade</li>
+         <li>shower, right hand</li>
+         <li>takeouts</li>
+         <li>tennis</li>
+       <ul>
+     </div>
+     <p id="clearfix"></p>
+  </div>
+ </body>
+</html>
