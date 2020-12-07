@@ -1,6 +1,6 @@
 # Juggling Vision javascript version
 
-The purpose of juggling-vision-js is to provide webcam based computer vision capabilities in browsers. The library can recognize the location of balls and hands in a video stream as well as categorizing common patterns. The library could be used for creating games or live effects for performances. To try it out, visit: https://eble.co/jugglingdemo/index.html
+The purpose of juggling-vision-js is to provide webcam based computer vision capabilities in browsers. The library can recognize the location of balls and hands in a video stream as well as categorizing common patterns. The library could be used for creating games or live effects for performances.
 
 ## Getting Started
 
