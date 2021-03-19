@@ -10,7 +10,7 @@ var jvision = new (function () {
         nBalls: nBalls,
       };
       const model = await tf.loadModel(
-        './models/submovavgmodel_light_js/model.json'
+        './models/submovavgmodel_js/model.json'
       );
       var video = document.createElement('video');
       video.style.display = 'None';
